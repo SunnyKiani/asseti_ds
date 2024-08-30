@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+<body width='canvas_width' height='canvas_height' >
+<!-- ----------------------------------------------------------------------  -->
+<!-- data:image/png;base64 -->
+
+<script>
+function polygon(ctx, gx, gy, col, alpha=0.4) {
+
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  x = gx[0];
+  y = gy[0];
+  ctx.moveTo(x,y);
+  for (var i = 1; i < gx.length; i++) {
+    x = gx[i];
+    y = gy[i];
+    ctx.lineTo(x,y);
+  }
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = col;
+  ctx.stroke();
+  ctx.closePath();
+  ctx.globalAlpha = 0.7*alpha;
+  ctx.fillStyle = col;
+  ctx.fill();
+}
+
+function get_data_cache(){
+  const data_span_contents = document.getElementById('data_cache').innerHTML;
+  const data_json = JSON.parse(data_span_contents);
+  //alert(data_json.geometries.class[0]);
+  return data_json;
+}
+
+function add(a,b) {
+  for (let i = 0; i < a.length; i++) {
+    a[i] += b
+  }
+  return a;
+}
+
+function mult(a,b) {
+  for (let i = 0; i < a.length; i++) {
+     a[i] *= b
+  }
+  return a;
+}
+
+function get_polygon_coords(x_text,y_text) {
+  var x = JSON.parse(x_text);
+  var y = JSON.parse(y_text);
+  return [x,y];
+}
+
+function geom_transform_y(ctx, y) {
+  var nx = ctx.canvas.clientWidth;
+  var ny = ctx.canvas.clientHeight;
+  y = mult(y,-1);
+  y = add(y,ny);
+  return y;
+}
+
+function draw_all_polygons(ctx,xx,yy) {
+  for (let i = 0; i < xx.length; i++) {
+    x = xx[i]
+    y = yy[i]
+    y = geom_transform_y(ctx, y);
+    polygon(ctx, x, y, col='#f0f',0.3);
+  }
+}
+
+function toggle_image() {
+  var fg_img = $('#fg_image');
+  var im_on = fg_img.attr('img_on');
+  if(im_on == 1){
+    fg_img.css('opacity','0.0');
+    fg_img.css('-moz-opacity','0.0');
+    fg_img.css('filter','alpha(opacity=0)');
+  } else {
+    fg_img.css('opacity','1.0');
+    fg_img.css('-moz-opacity','1.0');
+    fg_img.css('filter','alpha(opacity=100)');
+  }
+  fg_img.attr('img_on',im_on * -1);
+}
+
+function toggle_colour() {
+  var fg_img = $('#fg_image');
+  var img_rgb = fg_img.attr('img_rgb');
+  if(img_rgb == 1){
+    fg_img.css('filter','grayscale(100%)');
+    fg_img.css('-webkit-filter','grayscale(100%)');
+    fg_img.css('filter','gray');
+  } else {
+    fg_img.css('filter','none');
+    fg_img.css('-webkit-filter','none');
+    fg_img.css('filter','none');
+  }
+  fg_img.attr('img_rgb',img_rgb * -1);
+}
+
+function toggle_layer() {
+  var source_obj = $(event.target);
+  var source_id  = source_obj.attr('id');
+  if (source_obj[0].checked == true){
+    $('polygon.' + source_id).css('visibility','visible');
+  } else {
+    $('polygon.' + source_id).css('visibility','hidden');
+  }
+
+}
+
+
+window.onload = function() {
+  const data_json = get_data_cache();
+  //const canvas = document.getElementById('myCanvas');
+  //const ctx = canvas.getContext('2d');
+  const bg_img = document.getElementById('bg_image');
+  const fg_img = document.getElementById('fg_image');
+  fg_img.src = bg_img.src
+  //ctx.drawImage(img, 0, 0);
+
+  var xx = data_json.geometries.xcoords;
+  var yy = data_json.geometries.ycoords;
+  //draw_all_polygons(ctx,xx,yy);
+
+};
+</script>
+
+<!-- ----------------------------------------------------------------------  -->
+
+<div id='stagemenu' width='400' height='canvas_height' style='width:200px; border:1px solid black; z-index:0; position:absolute; top:8; left: calc(canvas_widthpx + 20px); padding:10px;'>
+  <br/>
+<button type="button" id="img_toggle_btn" onclick="toggle_image()">Image On/Off</button>
+<button type="button" id="colour_toggle_btn" onclick="toggle_colour()">Image RGB/Grey</button>
+<br/>
+<br/><br/>
+<fieldset>
+  <legend>Toggle layers:</legend>
+  <div>
+    <input type="checkbox" id='Asset_Boundary' name="Asset_Boundary" onclick="toggle_layer()" checked />
+    <label for="Asset_Boundary">Asset Boundary</label>
+  </div>
+  <div>
+    <input type="checkbox" id='Steel_Colourbond' name="Steel_Colourbond" onclick="toggle_layer()" checked />
+    <label for="Steel_Colourbond">Steel/Colourbond</label>
+  </div>
+  <div>
+    <input type="checkbox" id='Polycarbonate' name="Polycarbonate" onclick="toggle_layer()" checked />
+    <label for="Polycarbonate">Polycarbonate</label>
+  </div>
+  <div>
+    <input type="checkbox" id='other' name="other" onclick="toggle_layer()" checked />
+    <label for="other">Other</label>
+  </div>
+</fieldset>
+</div>
+
+<img id='fg_image'  width='canvas_width' height='canvas_height' style='border:1px solid blue;  z-index:-2; position:absolute; top:5; left:5; margin:0;padding:0;' img_on=1 img_rgb=1></img>
+<svg id='mainstage' width='canvas_width' height='canvas_height' style='border:1px solid black; z-index:-1; position:absolute; top:8; left:8; margin:0;padding:0;' viewBox='p_min q_min p_width q_width' xmlns='http://www.w3.org/2000/svg'>
+my_svg_contents
+</svg>
+
+<!--
+<canvas id='myCanvas' width='canvas_width' height='canvas_height' style='border:1px solid grey;'></canvas>
+-->
+
+<!-- ----------------------------------------------------------------------  -->
+
+<div id='data_cache' style='visibility:hidden; height:0; width:0;'>
+my_data_cache_contents
+</div>
+
+<img id='bg_image' width='0' height='0' src='my_byte_string' style='visibility:hidden; height:0; width:0;'>
+
+<!-- ----------------------------------------------------------------------  -->
+</body>
+</html>
